@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "scigantic-wwpdb"
-version = "0.1.0"
+dynamic = ["version"]
 description = "The wwPDB Chemical Component Dictionary (CCD), by id, no download."
 readme = "README.md"
 requires-python = ">=3.9"
@@ -33,6 +33,9 @@ test = ["pytest>=7", "rdkit"]
 Homepage = "https://scigantic.com"
 Repository = "https://github.com/Scigantic/scigantic-wwpdb"
 Issues = "https://github.com/Scigantic/scigantic-wwpdb/issues"
+
+[tool.hatch.version]
+path = "src/scigantic_wwpdb/_version.py"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/scigantic_wwpdb"]

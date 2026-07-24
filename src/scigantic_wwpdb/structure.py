@@ -46,7 +46,21 @@ def component(ccd_id: str) -> Component:
     return comp
 
 
-def components(ids, workers: int = 8) -> list:
+def components(ids, workers: int = 8, errors: str = "omit") -> list:
     """Fetch+parse full components for many ids in parallel (order preserved).
-    ~`workers`x faster than a loop for a search-result set."""
-    return _http.pmap(component, ids, workers=workers)
+    Much faster than a loop for a search-result set.
+
+    A single bad id must not sink the batch. errors="omit" (default) puts None in
+    place of any id that fails (404 / network), so you can filter with
+    `[c for c in components(ids) if c]`; errors="raise" restores fail-fast."""
+    if errors not in ("omit", "raise"):
+        raise ValueError("errors must be 'omit' or 'raise'")
+    if errors == "raise":
+        return _http.pmap(component, ids, workers=workers)
+
+    def _safe(cid):
+        try:
+            return component(cid)
+        except Exception:
+            return None  # bad/unknown id or transient failure — don't kill the batch
+    return _http.pmap(_safe, ids, workers=workers)

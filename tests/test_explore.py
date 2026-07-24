@@ -68,6 +68,24 @@ def test_components_parallel_preserves_order(monkeypatch):
     assert ccd.components(["ATP", "HEM", "NAD"]) == ["C:ATP", "C:HEM", "C:NAD"]
 
 
+def _flaky(cid):
+    if cid == "BAD":
+        raise KeyError("nope")
+    return f"C:{cid}"
+
+
+def test_components_omits_failures_by_default(monkeypatch):
+    # One bad id must not sink the whole batch — it becomes None in place.
+    monkeypatch.setattr(structure, "component", _flaky)
+    assert ccd.components(["ATP", "BAD", "NAD"]) == ["C:ATP", None, "C:NAD"]
+
+
+def test_components_errors_raise_is_fail_fast(monkeypatch):
+    monkeypatch.setattr(structure, "component", _flaky)
+    with pytest.raises(KeyError):
+        ccd.components(["ATP", "BAD"], errors="raise")
+
+
 # ── live smoke tests (network) — opt in with SCIGANTIC_LIVE_TESTS=1 ─────────
 LIVE = pytest.mark.skipif(not os.environ.get("SCIGANTIC_LIVE_TESTS"),
                           reason="set SCIGANTIC_LIVE_TESTS=1 to run network tests")

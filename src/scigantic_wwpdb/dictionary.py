@@ -14,14 +14,18 @@ DICTIONARY_URL = os.environ.get(
 
 def load_dictionary(dest: str | None = None, force: bool = False,
                     progress: bool = True) -> str:
-    """Stream the full CCD (components.cif.gz, ~117 MB) to a local file once and
-    return its path. Cached — re-runs are a no-op unless force=True."""
+    """Stream the full CCD (components.cif.gz, ~111 MB) to a local file once and
+    return its path. Cached — re-runs are a no-op unless force=True.
+
+    A single stream is deliberate: benchmarked from a us-east-1 pod, EBI serves
+    this file at ~11 MB/s on one connection and *throttles* concurrent byte-range
+    requests to ~3-4 MB/s, so splitting the download is ~3x slower, not faster."""
     dest = dest or os.path.join(
         os.environ.get("HOME", "/tmp"), "ccd", "components.cif.gz")
     os.makedirs(os.path.dirname(dest), exist_ok=True)
     if os.path.exists(dest) and not force and os.path.getsize(dest) > 0:
         return dest
-    with _http.session.get(DICTIONARY_URL, stream=True, timeout=120) as r:
+    with _http.session.get(DICTIONARY_URL, stream=True, timeout=180) as r:
         r.raise_for_status()
         total = int(r.headers.get("Content-Length", 0))
         done = 0

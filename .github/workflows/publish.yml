@@ -1,8 +1,6 @@
 name: Publish to PyPI
 # Tag a release (git tag v0.1.0 && git push --tags) to build, test, and publish.
-# Uses PyPI Trusted Publishing (OIDC) — configure a trusted publisher for this
-# repo at https://pypi.org/manage/project/scigantic-wwpdb/settings/publishing/
-# (workflow: publish.yml, environment: pypi). No token secret required.
+# Auth: a PyPI API token stored as the repo secret PYPI_KEY.
 on:
   push:
     tags: ['v*']
@@ -25,12 +23,11 @@ jobs:
   publish:
     needs: build
     runs-on: ubuntu-latest
-    environment: pypi
-    permissions:
-      id-token: write
     steps:
       - uses: actions/download-artifact@v4
         with:
           name: dist
           path: dist/
       - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          password: ${{ secrets.PYPI_KEY }}

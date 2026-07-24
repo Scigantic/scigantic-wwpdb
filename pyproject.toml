@@ -1,0 +1,41 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "scigantic-wwpdb"
+version = "0.1.0"
+description = "The wwPDB Chemical Component Dictionary (CCD), by id, no download."
+readme = "README.md"
+requires-python = ">=3.9"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Scigantic", email = "support@scigantic.com" }]
+keywords = [
+  "wwpdb", "ccd", "chemical component dictionary", "pdb", "ligand",
+  "cheminformatics", "structural biology", "rdkit", "gemmi", "smiles",
+]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Topic :: Scientific/Engineering :: Bio-Informatics",
+  "Topic :: Scientific/Engineering :: Chemistry",
+]
+dependencies = ["gemmi>=0.6", "requests>=2.25"]
+
+[project.optional-dependencies]
+rdkit = ["rdkit"]
+test = ["pytest>=7", "rdkit"]
+
+[project.urls]
+Homepage = "https://scigantic.com"
+Repository = "https://github.com/Scigantic/scigantic-wwpdb"
+Issues = "https://github.com/Scigantic/scigantic-wwpdb/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/scigantic_wwpdb"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

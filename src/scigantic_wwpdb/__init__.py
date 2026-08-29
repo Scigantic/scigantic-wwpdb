@@ -21,6 +21,11 @@ Then, per component:
 The idiom for browsing is `find(search("kinase inhibitor"))`: search names it,
 find skims the set in a single request, and you only pull full structures for the
 handful you actually want. Every function is a few lines you can read and bend.
+
+find()/component() responses are cached on disk per id, on by default (14-day
+TTL): disable_cache() turns it off, enable_cache(ttl_days=...) changes the
+directory or expiry. See cache.py for why this defaults on, unlike
+scigantic-chembl's/scigantic-bindingdb's opt-in caching.
 """
 from ._version import __version__
 from .model import Summary, Component, Atom, Bond
@@ -29,6 +34,7 @@ from .rcsb import search, find, name, formula, smiles, inchi, inchikey
 from .structure import component, components, component_url, fetch_cif
 from .chem import to_rdkit, to_sdf
 from .dictionary import load_dictionary, read_dictionary
+from .cache import enable_cache, disable_cache, is_cache_enabled, cache_dir, clear as clear_cache
 
 __all__ = [
     "__version__",
@@ -42,6 +48,8 @@ __all__ = [
     "to_rdkit", "to_sdf",
     # bulk
     "load_dictionary", "read_dictionary",
+    # caching (on by default, see cache.py)
+    "enable_cache", "disable_cache", "is_cache_enabled", "cache_dir", "clear_cache",
     # models / low-level
     "Summary", "Component", "Atom", "Bond", "cif_block",
 ]

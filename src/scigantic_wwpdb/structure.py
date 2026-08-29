@@ -6,7 +6,7 @@ once search()/find() have told you which components you actually want.
 from __future__ import annotations
 import os
 
-from . import _http
+from . import _http, cache
 from ._cif import parse
 from .model import Component
 
@@ -21,7 +21,19 @@ def component_url(ccd_id: str) -> str:
 
 
 def fetch_cif(ccd_id: str, retries: int = 2) -> str:
-    """Fetch one component's raw mmCIF text (a few KB)."""
+    """Fetch one component's raw mmCIF text (a few KB).
+
+    Cached per id (see cache.py), on by default: a repeat component()/
+    components() call for an id already fetched in this process (or a prior
+    one, within cache.py's ttl_days) reads the cached text with no request.
+    A 404 (unknown id) is never cached, so a real typo keeps raising rather
+    than being remembered as permanently missing.
+    """
+    key = f"cif:{str(ccd_id).strip().upper()}"
+    cached = cache.get(key)
+    if cached is not None:
+        return cached
+
     url = component_url(ccd_id)
     last = None
     for _ in range(retries + 1):
@@ -30,6 +42,7 @@ def fetch_cif(ccd_id: str, retries: int = 2) -> str:
             if r.status_code == 404:
                 raise KeyError(f"CCD component {ccd_id!r} not found ({url})")
             r.raise_for_status()
+            cache.put(key, r.text)
             return r.text
         except KeyError:
             raise

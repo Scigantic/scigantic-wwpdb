@@ -39,7 +39,7 @@ ccd.to_sdf("ATP", "ATP.sdf")            # write an SDF
 
 `to_rdkit` builds the molecule from the dictionary's atoms and bonds, not from a SMILES round-trip, so organometallics like heme (whose coordinate-bond SMILES a plain parser cannot read) still work.
 
-One-liners `smiles / inchi / inchikey / formula / name(id)` use the fast metadata API, not a full CIF fetch.
+One-liners `smiles / inchi / inchikey / formula / name(id)` use the fast metadata API, not a full CIF fetch. `find()`/`component()` responses are cached per id on disk, on by default (14-day TTL), so calling several of these one-liners for the same id costs one request, not several. `ccd.disable_cache()` turns it off; `ccd.enable_cache(cache_dir=..., ttl_days=...)` changes where or how long.
 
 ## The whole dictionary
 

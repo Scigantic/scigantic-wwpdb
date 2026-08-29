@@ -9,8 +9,9 @@ what you actually want, with component()/components() in .structure.
 from __future__ import annotations
 import os
 import json
+from dataclasses import asdict
 
-from . import _http
+from . import _http, cache
 from .model import Summary
 
 DATA_GRAPHQL = os.environ.get("SCIGANTIC_CCD_GRAPHQL", "https://data.rcsb.org/graphql")
@@ -30,27 +31,50 @@ def find(ids) -> list:
     """Metadata for one or many components in a SINGLE request: a list of
     Summary(id, name, formula, type, weight, smiles, inchikey). No CIF fetch, no
     atoms/coords. This is how you skim a whole result set fast. Unknown ids are
-    simply absent from the result."""
+    simply absent from the result.
+
+    Cached per id (see cache.py), on by default. name()/formula()/smiles()/
+    inchi()/inchikey() each call this via _one(), so looking up several of
+    those for the same id used to mean several identical GraphQL round trips;
+    now only the first one for a given id (per cache.py's ttl_days, 14 by
+    default) touches the network. Only ids RCSB actually returned a row for
+    are cached; an id that comes back empty (unknown/typo) is re-queried
+    every time rather than caching a negative result.
+    """
     if isinstance(ids, str):
         ids = [ids]
     ids = [str(i).strip().upper() for i in ids if str(i).strip()]
     if not ids:
         return []
-    data = _http.post_json(DATA_GRAPHQL, {"query": _GQL % json.dumps(ids)})
-    out = []
-    for row in (data.get("data", {}) or {}).get("chem_comps") or []:
-        if not row:
-            continue
-        cc = row.get("chem_comp") or {}
-        desc = row.get("rcsb_chem_comp_descriptor") or {}
-        out.append(Summary(
-            id=row.get("rcsb_id") or cc.get("id"),
-            name=cc.get("name"), formula=cc.get("formula"),
-            type=cc.get("type"), weight=cc.get("formula_weight"),
-            smiles=desc.get("SMILES_stereo"),
-            inchi=desc.get("InChI"), inchikey=desc.get("InChIKey"),
-        ))
-    return out
+
+    hits: dict[str, Summary] = {}
+    missing = []
+    for i in ids:
+        cached = cache.get(f"find:{i}")
+        if cached is not None:
+            hits[i] = Summary(**cached)
+        else:
+            missing.append(i)
+
+    if missing:
+        data = _http.post_json(DATA_GRAPHQL, {"query": _GQL % json.dumps(missing)})
+        for row in (data.get("data", {}) or {}).get("chem_comps") or []:
+            if not row:
+                continue
+            cc = row.get("chem_comp") or {}
+            desc = row.get("rcsb_chem_comp_descriptor") or {}
+            s = Summary(
+                id=row.get("rcsb_id") or cc.get("id"),
+                name=cc.get("name"), formula=cc.get("formula"),
+                type=cc.get("type"), weight=cc.get("formula_weight"),
+                smiles=desc.get("SMILES_stereo"),
+                inchi=desc.get("InChI"), inchikey=desc.get("InChIKey"),
+            )
+            key = str(s.id).strip().upper()
+            hits[key] = s
+            cache.put(f"find:{key}", asdict(s))
+
+    return [hits[i] for i in ids if i in hits]
 
 
 def search(query: str, limit: int = 25) -> list:

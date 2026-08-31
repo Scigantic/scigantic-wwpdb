@@ -1,5 +1,16 @@
 # scigantic-wwpdb
 
+<p align="center">
+    <a href="https://github.com/Scigantic/scigantic-wwpdb/actions/workflows/ci.yml">
+        <img alt="CI" src="https://github.com/Scigantic/scigantic-wwpdb/actions/workflows/ci.yml/badge.svg" /></a>
+    <a href="https://pypi.org/project/scigantic-wwpdb/">
+        <img alt="PyPI" src="https://img.shields.io/pypi/v/scigantic-wwpdb" /></a>
+    <a href="https://pypi.org/project/scigantic-wwpdb/">
+        <img alt="PyPI - Python Version" src="https://img.shields.io/pypi/pyversions/scigantic-wwpdb" /></a>
+    <a href="https://github.com/Scigantic/scigantic-wwpdb/blob/main/LICENSE">
+        <img alt="License" src="https://img.shields.io/github/license/Scigantic/scigantic-wwpdb" /></a>
+</p>
+
 Explore the wwPDB [Chemical Component Dictionary](https://www.wwpdb.org/data/ccd) (CCD) from Python, by id, no download.
 
 The CCD is the reference chemistry for every small molecule, ligand, ion, and modified residue in the PDB, about 45,000 components. It is the small-molecule reference AlphaFold 3 uses for ligand pose prediction, and what you reach for whenever a structure has a `HETATM` to reason about.

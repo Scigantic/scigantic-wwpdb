@@ -29,13 +29,16 @@ def fetch_cif(ccd_id: str, retries: int = 2) -> str:
     A 404 (unknown id) is never cached, so a real typo keeps raising rather
     than being remembered as permanently missing.
     """
+    if retries < 0:
+        raise ValueError(f"retries must be >= 0, got {retries!r}")
+
     key = f"cif:{str(ccd_id).strip().upper()}"
     cached = cache.get(key)
     if cached is not None:
         return cached
 
     url = component_url(ccd_id)
-    last = None
+    last: Exception | None = None
     for _ in range(retries + 1):
         try:
             r = _http.get(url)
@@ -48,6 +51,7 @@ def fetch_cif(ccd_id: str, retries: int = 2) -> str:
             raise
         except Exception as exc:  # transient network / 5xx — retry
             last = exc
+    assert last is not None
     raise last
 
 

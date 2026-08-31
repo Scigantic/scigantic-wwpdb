@@ -23,7 +23,7 @@ classifiers = [
   "Topic :: Scientific/Engineering :: Bio-Informatics",
   "Topic :: Scientific/Engineering :: Chemistry",
 ]
-dependencies = ["gemmi>=0.6", "requests>=2.25"]
+dependencies = ["gemmi>=0.6,<1", "requests>=2.25,<3"]
 
 [project.optional-dependencies]
 rdkit = ["rdkit"]
@@ -42,3 +42,10 @@ packages = ["src/scigantic_wwpdb"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.mypy]
+files = ["src/scigantic_wwpdb"]
+# Non-strict starting point; gemmi/rdkit don't ship complete type stubs.
+ignore_missing_imports = true
+warn_unused_ignores = true
+warn_redundant_casts = true

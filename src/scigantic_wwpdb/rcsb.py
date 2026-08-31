@@ -64,7 +64,7 @@ def find(ids) -> list:
             cc = row.get("chem_comp") or {}
             desc = row.get("rcsb_chem_comp_descriptor") or {}
             s = Summary(
-                id=row.get("rcsb_id") or cc.get("id"),
+                id=str(row.get("rcsb_id") or cc.get("id") or ""),
                 name=cc.get("name"), formula=cc.get("formula"),
                 type=cc.get("type"), weight=cc.get("formula_weight"),
                 smiles=desc.get("SMILES_stereo"),

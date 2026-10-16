@@ -18,6 +18,10 @@ DATA_GRAPHQL = os.environ.get("SCIGANTIC_CCD_GRAPHQL", "https://data.rcsb.org/gr
 SEARCH_URL = os.environ.get(
     "SCIGANTIC_CCD_SEARCH", "https://search.rcsb.org/rcsbsearch/v2/query")
 
+# RCSB's server-side cap on comp_ids per chem_comps query. Measured: 1000 is
+# accepted, 1100 is not ("Input 'comp_ids' exceeds maximum allowed size of 1000").
+MAX_IDS_PER_QUERY = 1000
+
 # One GraphQL query, many components. RCSB returns null for unknown ids, which we
 # drop, so find(["ATP", "NOPE"]) is safe.
 _GQL = """{ chem_comps(comp_ids: %s) {
@@ -28,10 +32,16 @@ _GQL = """{ chem_comps(comp_ids: %s) {
 
 
 def find(ids) -> list:
-    """Metadata for one or many components in a SINGLE request: a list of
+    """Metadata for one or many components, a request per 1000: a list of
     Summary(id, name, formula, type, weight, smiles, inchikey). No CIF fetch, no
     atoms/coords. This is how you skim a whole result set fast. Unknown ids are
     simply absent from the result.
+
+    RCSB caps `comp_ids` at MAX_IDS_PER_QUERY (1000). Over that it answers HTTP 200
+    with a GraphQL `errors` array and `chem_comps: null`, which used to make this
+    function return [] — a silent empty result that reads exactly like "none of
+    those exist". Ids are chunked to stay under the cap, and a GraphQL error that
+    yields no rows now raises instead of being swallowed.
 
     Cached per id (see cache.py), on by default. name()/formula()/smiles()/
     inchi()/inchikey() each call this via _one(), so looking up several of
@@ -56,9 +66,15 @@ def find(ids) -> list:
         else:
             missing.append(i)
 
-    if missing:
-        data = _http.post_json(DATA_GRAPHQL, {"query": _GQL % json.dumps(missing)})
-        for row in (data.get("data", {}) or {}).get("chem_comps") or []:
+    for chunk in (missing[i:i + MAX_IDS_PER_QUERY]
+                  for i in range(0, len(missing), MAX_IDS_PER_QUERY)):
+        data = _http.post_json(DATA_GRAPHQL, {"query": _GQL % json.dumps(chunk)})
+        rows = (data.get("data", {}) or {}).get("chem_comps") or []
+        if not rows and data.get("errors"):
+            raise RuntimeError(
+                "RCSB GraphQL rejected a chem_comps query for "
+                f"{len(chunk)} ids: {data['errors'][0].get('message')}")
+        for row in rows:
             if not row:
                 continue
             cc = row.get("chem_comp") or {}

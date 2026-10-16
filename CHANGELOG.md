@@ -15,6 +15,13 @@
     `COMMON_ADDITIVES` set (pass `additives=True` to keep them).
   - `is_interesting_ligand(ccd_id, min_heavy_atoms=10)` combines that set with a
     heavy-atom count read off the formula, so no CIF fetch is needed.
+- **Fixed a silent empty result in `find()`.** RCSB caps `comp_ids` at 1000 per
+  `chem_comps` query; past that it answers HTTP 200 with a GraphQL `errors` array
+  and `chem_comps: null`, and `find()` returned `[]` — indistinguishable from
+  "none of those components exist". Ids are now chunked at
+  `rcsb.MAX_IDS_PER_QUERY`, and a GraphQL error that yields no rows raises
+  instead of being swallowed. Unknown ids stay tolerant as before. Found by
+  calling `find()` with 1698 ligand ids, which returned 0.
 - `search_entries()`/`count_entries()` refuse a query whose only filter is
   `method`, since that still selects ~200,000 entries.
 - Documented two RCSB behaviours that make hand-rolling these queries risky: a

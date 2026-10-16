@@ -117,3 +117,48 @@ def test_live_components_parallel():
 def test_live_missing_id_raises():
     with pytest.raises(KeyError):
         ccd.component("ZZZZZ")
+
+
+def test_find_chunks_past_the_server_cap(monkeypatch):
+    """RCSB caps comp_ids at 1000 per chem_comps query; find() must chunk.
+
+    Before this, 1698 ids in one query came back as HTTP 200 with a GraphQL
+    `errors` array and chem_comps: null, and find() returned [] — a silent empty
+    that reads identically to "none of those components exist".
+    """
+    seen = []
+
+    def fake(url, payload, *a, **k):
+        seen.append(payload)
+        import re
+        # echo back exactly the ids this chunk asked for, so overlapping or
+        # repeated chunks would show up as a short result rather than passing
+        asked = re.findall(r'"(X\d{4})"', payload["query"])
+        assert len(asked) <= rcsb.MAX_IDS_PER_QUERY, \
+            f"sent {len(asked)} ids, over the cap"
+        return {"data": {"chem_comps": [
+            {"rcsb_id": i, "chem_comp": {"id": i},
+             "rcsb_chem_comp_descriptor": {}} for i in asked]}}
+
+    monkeypatch.setattr(rcsb._http, "post_json", fake)
+    ids = [f"X{i:04d}" for i in range(2500)]
+    got = rcsb.find(ids)
+    assert len(seen) == 3, "2500 ids should be three requests, not one"
+    assert len(got) == 2500
+
+
+def test_find_raises_on_graphql_error_instead_of_empty(monkeypatch):
+    monkeypatch.setattr(rcsb._http, "post_json", lambda *a, **k: {
+        "data": {"chem_comps": None},
+        "errors": [{"message": "Input 'comp_ids' exceeds maximum allowed size of 1000"}]})
+    import pytest
+    with pytest.raises(RuntimeError, match="exceeds maximum"):
+        rcsb.find(["ATP"])
+
+
+def test_find_unknown_ids_still_return_empty_not_error(monkeypatch):
+    # an unknown id is absent from the rows but carries no `errors`; that must
+    # stay tolerant rather than raising
+    monkeypatch.setattr(rcsb._http, "post_json",
+                        lambda *a, **k: {"data": {"chem_comps": []}})
+    assert rcsb.find(["NOPE"]) == []

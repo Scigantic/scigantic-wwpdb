@@ -1,5 +1,34 @@
 # Changelog
 
+## 0.3.0
+
+- New `entries.py`: find PDB **entries** by structured criteria, which is the
+  question that comes before "what is component ATP?".
+  - `search_entries(released_after=, released_before=, resolution_max=, method=,
+    with_ligand=, contains_ccd=, sequence=, identity_cutoff=, limit=, extra=)`
+    returns entry ids, paginating past RCSB's per-request `rows` cap rather than
+    silently stopping at the first page.
+  - `count_entries(...)` returns the same query's total without pulling ids, so
+    it is cheap to use as the control for a surprising zero.
+  - `entry_ligands(ids)` maps many entries to their non-polymer CCD ids in one
+    GraphQL request, stripping the ions/buffers/cryoprotectants in the new
+    `COMMON_ADDITIVES` set (pass `additives=True` to keep them).
+  - `is_interesting_ligand(ccd_id, min_heavy_atoms=10)` combines that set with a
+    heavy-atom count read off the formula, so no CIF fetch is needed.
+- **Fixed a silent empty result in `find()`.** RCSB caps `comp_ids` at 1000 per
+  `chem_comps` query; past that it answers HTTP 200 with a GraphQL `errors` array
+  and `chem_comps: null`, and `find()` returned `[]` — indistinguishable from
+  "none of those components exist". Ids are now chunked at
+  `rcsb.MAX_IDS_PER_QUERY`, and a GraphQL error that yields no rows raises
+  instead of being swallowed. Unknown ids stay tolerant as before. Found by
+  calling `find()` with 1698 ligand ids, which returned 0.
+- `search_entries()`/`count_entries()` refuse a query whose only filter is
+  `method`, since that still selects ~200,000 entries.
+- Documented two RCSB behaviours that make hand-rolling these queries risky: a
+  query with no hits answers HTTP 204 with an empty body (so a zero is
+  indistinguishable from a query the server would not accept), and results past
+  the first page need explicit pagination.
+
 ## 0.2.1
 
 - Pinned dependency ceilings: `gemmi>=0.6,<1`, `requests>=2.25,<3` (previously

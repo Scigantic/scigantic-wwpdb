@@ -20,6 +20,10 @@ classifiers = [
   "Intended Audience :: Science/Research",
   "License :: OSI Approved :: MIT License",
   "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
   "Topic :: Scientific/Engineering :: Bio-Informatics",
   "Topic :: Scientific/Engineering :: Chemistry",
 ]
@@ -33,6 +37,7 @@ test = ["pytest>=7", "rdkit"]
 Homepage = "https://scigantic.com"
 Repository = "https://github.com/Scigantic/scigantic-wwpdb"
 Issues = "https://github.com/Scigantic/scigantic-wwpdb/issues"
+Documentation = "https://github.com/Scigantic/scigantic-wwpdb#readme"
 
 [tool.hatch.version]
 path = "src/scigantic_wwpdb/_version.py"

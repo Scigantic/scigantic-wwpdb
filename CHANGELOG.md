@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.4.0
+
+- Python 3.9 is no longer supported; the package now requires Python 3.10 or
+  newer. 3.9 reached end of life in October 2025 and the CI runner image no
+  longer provides it. Nothing else changed: on 3.9, pip keeps installing 0.3.0.
+- PyPI metadata: Python version classifiers and a Documentation link.
+
 ## 0.3.0
 
 - New `entries.py`: find PDB **entries** by structured criteria, which is the

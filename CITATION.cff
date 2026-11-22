@@ -1,0 +1,22 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it using the metadata from this file."
+type: software
+title: scigantic-wwpdb
+abstract: "Fetch entries of the wwPDB Chemical Component Dictionary (CCD) by id over HTTP, without downloading the dictionary."
+authors:
+  - name: Scigantic
+    website: https://scigantic.com
+repository-code: https://github.com/Scigantic/scigantic-wwpdb
+url: https://pypi.org/project/scigantic-wwpdb/
+license: MIT
+keywords:
+  - "wwpdb"
+  - "ccd"
+  - "chemical component dictionary"
+  - "pdb"
+  - "ligand"
+  - "cheminformatics"
+  - "structural biology"
+  - "rdkit"
+version: "0.4.0"
+date-released: '2026-11-22'
